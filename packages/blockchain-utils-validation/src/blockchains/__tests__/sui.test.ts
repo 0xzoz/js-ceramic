@@ -1,7 +1,7 @@
-import { validateLink } from '../solana'
-import { Ed25519Keypair } from "@mysten/sui.js";
-import { SolanaAuthProvider } from '@ceramicnetwork/blockchain-utils-linking'
-import { sign } from '@stablelib/ed25519'
+import { validateLink } from '../sui'
+import { Base64DataBuffer, Ed25519Keypair } from "@mysten/sui.js";
+import { SuiAuthProvider } from '@ceramicnetwork/blockchain-utils-linking'
+
 
 const did = 'did:3:bafysdfwefwe'
 const privKey = 'mdqVWeFekT7pqy5T49+tV12jO0m+ESW7ki4zSU9JiCgbL0kJbj5dvQ/PqcDAzZLZqzshVEs01d1KZdmLh4uZIg=='
@@ -16,7 +16,9 @@ class MyWalletAdapter {
   }
 
   async signMessage(message: Uint8Array): Promise<Uint8Array> {
-    return sign(this._keyPair.secretKey, message)
+    const msg = new Base64DataBuffer(message);
+    const signature = this._keyPair.signData(msg);
+    return signature.getData()
   }
 }
 
@@ -24,7 +26,7 @@ describe('Blockchain: ', () => {
   describe('validateLink', () => {
     test(`validate proof for ${chainRef}`, async () => {
       const provider = new MyWalletAdapter(keyPairEd25519)
-      const authProvider = new SolanaAuthProvider(provider, keyPairEd25519.publicKey.toString(), chainRef)
+      const authProvider = new SuiAuthProvider(provider, keyPairEd25519.getPublicKey().toString(), chainRef)
       const proof = await authProvider.createLink(did)
       await expect(validateLink(proof)).resolves.toEqual(proof)
     })
